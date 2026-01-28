@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Report Promotor</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        tailwind.config = { 
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: { darkBg: '#0f172a', cardDark: '#1e293b' }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; -webkit-tap-highlight-color: transparent; scroll-behavior: smooth; overflow-x: hidden; }
+        .glass-header { backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); background: rgba(241, 245, 249, 0.8); }
+        .dark .glass-header { background: rgba(15, 23, 42, 0.8); }
+        .stat-card { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .skeleton {
+            background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%);
+            background-size: 200% 100%;
+            animation: skeleton-loading 1.5s infinite;
+        }
+        .dark .skeleton {
+            background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%);
+        }
+        @keyframes skeleton-loading { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+        .hide-scroll::-webkit-scrollbar { display: none; }
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            margin-top: 8px;
+            z-index: 200;
+            opacity: 0;
+            box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+        }
+        .dropdown-content.show {
+            display: block;
+            animation: slideDown 0.25s ease-out forwards;
+            transform-origin: top;
+        }
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-12px) scaleY(0.98); }
+            to { opacity: 1; transform: translateY(0) scaleY(1); }
+        }
+        .table-container { width: 100%; overflow: hidden; }
+        @media screen and (max-width: 768px) {
+            input, select, textarea, button { font-size: 16px !important; }
+        }
+    </style>
+</head>
+<body class="bg-slate-100 dark:bg-darkBg text-slate-900 dark:text-slate-200 min-h-screen pb-20">
+
+    <header class="glass-header sticky top-0 z-[110] border-b border-slate-200 dark:border-slate-800 px-4 py-4 mb-4">
+        <div class="container mx-auto">
+            <div class="flex items-center justify-between mb-4">
+                <div id="logoContainer" class="flex items-center gap-2"></div>
+                <div id="lastUpdateContainer" class="text-[10px] font-black px-3 py-1.5 bg-slate-500/10 text-slate-500 rounded-full border border-slate-500/20 flex items-center gap-2 uppercase tracking-widest">
+                    <i data-lucide="clock" class="w-3 h-3"></i>
+                    <span id="txtLastUpdate">Loading...</span>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-3">
+                <div class="relative">
+                    <label class="absolute -top-2 left-3 bg-slate-100 dark:bg-darkBg px-1 text-[9px] font-extrabold text-slate-400 uppercase z-[120] tracking-tighter">Periode</label>
+                    <button id="btnBulan" onclick="toggleDrop('dropBulan', event)" class="w-full bg-white dark:bg-cardDark border border-slate-300 dark:border-slate-700 p-3.5 rounded-2xl text-[13px] font-bold flex justify-between items-center shadow-sm active:scale-95 transition-transform">
+                        <span id="valBulan" class="truncate text-slate-700 dark:text-slate-200">Memuat...</span>
+                        <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400"></i>
+                    </button>
+                    <div id="dropBulan" class="dropdown-content bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl max-h-72 overflow-y-auto hide-scroll"></div>
+                </div>
+
+                <div class="relative">
+                    <label class="absolute -top-2 left-3 bg-slate-100 dark:bg-darkBg px-1 text-[9px] font-extrabold text-slate-400 uppercase z-[120] tracking-tighter">PIC</label>
+                    <div class="relative group">
+                        <input 
+                            type="text" 
+                            id="inputPIC" 
+                            placeholder="Cari PIC..."
+                            onfocus="this.select(); toggleDrop('dropPIC', event)"
+                            oninput="filterPIC(this.value)"
+                            class="w-full bg-white dark:bg-cardDark border border-slate-300 dark:border-slate-700 p-3.5 pl-10 rounded-2xl text-[13px] font-bold shadow-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                        >
+                        <i data-lucide="search" class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"></i>
+                        <i data-lucide="chevron-down" class="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none"></i>
+                    </div>
+                    <div id="dropPIC" class="dropdown-content bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl max-h-60 overflow-y-auto hide-scroll"></div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 space-y-4">
+        <div id="skeletonView" class="space-y-4">
+            <div class="h-32 skeleton rounded-[2rem]"></div>
+            <div class="grid grid-cols-2 gap-4">
+                <div class="h-28 skeleton rounded-[2rem]"></div>
+                <div class="h-28 skeleton rounded-[2rem]"></div>
+            </div>
+        </div>
+
+        <div id="realView" class="hidden space-y-4 animate__animated animate__fadeIn">
+            <section class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="stat-card bg-gradient-to-br from-blue-600 to-indigo-700 p-6 rounded-[2.2rem] shadow-xl shadow-blue-500/20 text-white relative overflow-hidden flex flex-col justify-center min-h-[140px]">
+                    <i data-lucide="medal" class="absolute -right-6 -bottom-6 w-32 h-32 opacity-10 rotate-12"></i>
+                    <div class="relative z-10 flex justify-between items-end">
+                        <div>
+                            <p class="text-[10px] font-bold opacity-80 uppercase tracking-widest mb-1">Total Achievement</p>
+                            <p id="statAchSales" class="text-4xl font-black tracking-tighter leading-none">0%</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-[10px] font-bold opacity-80 uppercase mb-1">Actual Sell Out</p>
+                            <p id="statTotalSales" class="text-xl font-black">0</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="stat-card bg-white dark:bg-cardDark p-6 rounded-[2.2rem] shadow-sm border border-slate-200 dark:border-slate-800 flex flex-col justify-center min-h-[140px]">
+                    <div class="flex justify-between items-center mb-4">
+                        <div class="flex items-center gap-2">
+                             <div class="p-1.5 bg-slate-500/10 rounded-lg"><i data-lucide="target" class="w-4 h-4 text-slate-400"></i></div>
+                             <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Target Progress</span>
+                        </div>
+                        <span id="statTargetSales" class="text-xs font-bold text-slate-400">0</span>
+                    </div>
+                    <div class="h-4 w-full bg-slate-100 dark:bg-slate-700/50 rounded-full overflow-hidden">
+                        <div id="barSales" class="h-full bg-blue-600 rounded-full transition-all duration-1000" style="width: 0%"></div>
+                    </div>
+                </div>
+            </section>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div class="bg-white dark:bg-cardDark p-5 rounded-[2rem] border-b-[6px] border-orange-500 shadow-sm">
+                    <p class="text-[9px] font-black text-orange-500 uppercase mb-1">Bigbet</p>
+                    <p id="statBigBet" class="text-lg font-black text-slate-700 dark:text-slate-200 leading-tight">0/0</p>
+                    <p id="statAchBigBet" class="text-2xl font-black text-orange-500">0%</p>
+                </div>
+                <div class="bg-white dark:bg-cardDark p-5 rounded-[2rem] border-b-[6px] border-emerald-500 shadow-sm">
+                    <p class="text-[9px] font-black text-emerald-500 uppercase mb-1">Non-Bigbet</p>
+                    <p id="statNonBigBet" class="text-lg font-black text-slate-700 dark:text-slate-200 leading-tight">0/0</p>
+                    <p id="statAchNonBigBet" class="text-2xl font-black text-emerald-500">0%</p>
+                </div>
+                <div class="bg-white dark:bg-cardDark p-5 rounded-[2rem] border-b-[6px] border-indigo-500 shadow-sm">
+                    <p class="text-[9px] font-black text-indigo-500 uppercase mb-1">Pribadi</p>
+                    <p id="statPribadi" class="text-lg font-black text-slate-700 dark:text-slate-200 leading-tight">0/0</p>
+                    <p id="statAchPribadi" class="text-2xl font-black text-indigo-500">0%</p>
+                </div>
+                <div class="bg-white dark:bg-cardDark p-5 rounded-[2rem] border-b-[6px] border-purple-500 shadow-sm">
+                    <p class="text-[9px] font-black text-purple-500 uppercase mb-1">Event</p>
+                    <p id="statEvent" class="text-lg font-black text-slate-700 dark:text-slate-200 leading-tight">0/0</p>
+                    <p id="statAchEvent" class="text-2xl font-black text-purple-500">0%</p>
+                </div>
+            </div>
+
+            <section class="bg-white dark:bg-cardDark rounded-[2.5rem] overflow-hidden shadow-sm border border-slate-200 dark:border-slate-800">
+                <div class="p-5 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
+                    <h3 class="font-black text-[10px] uppercase tracking-widest text-slate-400">Breakdown Records</h3>
+                    <span id="rowCount" class="text-[10px] font-bold bg-slate-50 dark:bg-slate-800 px-3 py-1.5 rounded-full text-slate-500">0 Data</span>
+                </div>
+                <div class="table-container">
+                    <table class="w-full text-left table-fixed">
+                        <thead class="bg-slate-50/50 dark:bg-slate-900 text-slate-400 uppercase text-[9px] font-black">
+                            <tr>
+                                <th class="px-4 py-4 hidden md:table-cell md:w-1/4">Promotor</th> 
+                                <th class="px-4 py-4 w-2/3 md:w-1/3">Event</th>
+                                <th class="px-4 py-4 text-center hidden md:table-cell md:w-1/6">Days</th>
+                                <th class="px-4 py-4 text-right w-1/3 md:w-1/4">Sell Out</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody" class="divide-y divide-slate-100 dark:divide-slate-800/50 text-xs"></tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <script>
+        // GANTI URL INI SETIAP KALI NEW DEPLOYMENT (Pilih "Anyone")
+        const API_URL = 'https://script.google.com/macros/s/AKfycbwdeHToNBKtvAzCkI6G-E3rzGrIgYTKnRwv6xwJK5Cfn7gXCRTKm4X7BZGn2CBhVNw/exec'; 
+        const LOGO_URL = 'https://upload.wikimedia.org/wikipedia/id/4/4c/Paragoncorp-logo.png';
+
+        let allData = { summary: [], targets: {}, konten: [], lastUpdate: '' };
+        let currentFilter = { bulan: '', pic: 'Semua PIC' };
+        let uniquePICs = [];
+
+        function initLogo() {
+            const container = document.getElementById('logoContainer');
+            container.innerHTML = LOGO_URL ? `<img src="${LOGO_URL}" class="h-8 w-auto">` : `
+                <div class="bg-blue-600 p-2 rounded-xl shadow-lg shadow-blue-500/30"><i data-lucide="layers" class="text-white w-5 h-5"></i></div>
+                <h1 class="text-xl font-extrabold tracking-tighter uppercase font-black">REPORT<span class="text-blue-600">PRO</span></h1>
+            `;
+            lucide.createIcons();
+        }
+
+        async function fetchData() {
+            try {
+                const res = await fetch(API_URL);
+                if (!res.ok) throw new Error('Network response was not ok');
+                allData = await res.json();
+
+                // Update Last Update Text
+                if (allData.lastUpdate) {
+                    document.getElementById('txtLastUpdate').innerText = 'Update: ' + allData.lastUpdate;
+                }
+
+                initLogo();
+                setupInitialFilters();
+                updateDashboard();
+
+                document.getElementById('skeletonView').classList.add('hidden');
+                document.getElementById('realView').classList.remove('hidden');
+                lucide.createIcons(); // Re-render icons
+
+            } catch(e) { 
+                console.error("Gagal fetch:", e); 
+                document.getElementById('txtLastUpdate').innerText = "Gagal Memuat Data";
+            }
+        }
+
+        function setupInitialFilters() {
+            const db = document.getElementById('dropBulan');
+            const uniqueMonths = [...new Set(allData.summary.map(i => i.bulan))];
+            uniquePICs = [...new Set(allData.summary.map(i => i.pic))].sort();
+            
+            const curMonth = new Intl.DateTimeFormat('id-ID', {month: 'long'}).format(new Date());
+            currentFilter.bulan = uniqueMonths.includes(curMonth) ? curMonth : (uniqueMonths.length > 0 ? uniqueMonths[0] : '');
+            document.getElementById('valBulan').innerText = currentFilter.bulan || 'Pilih Bulan';
+
+            db.innerHTML = uniqueMonths.map(m => `
+                <div onclick="selectOption('bulan', '${m}')" class="px-5 py-4 text-sm font-bold hover:bg-blue-50 dark:hover:bg-blue-900/20 cursor-pointer border-b dark:border-slate-700/50 last:border-0 text-slate-600 dark:text-slate-300">${m}</div>
+            `).join('');
+
+            renderPICOptions(['Semua PIC', ...uniquePICs]);
+            document.getElementById('inputPIC').value = 'Semua PIC';
+        }
+
+        function renderPICOptions(list) {
+            const dp = document.getElementById('dropPIC');
+            dp.innerHTML = list.map(p => `
+                <div onclick="selectOption('pic', '${p}')" class="px-5 py-4 text-sm font-bold hover:bg-blue-50 dark:hover:bg-blue-900/20 cursor-pointer border-b dark:border-slate-700/50 last:border-0 text-slate-600 dark:text-slate-300">${p}</div>
+            `).join('');
+        }
+
+        function filterPIC(val) {
+            const filtered = ['Semua PIC', ...uniquePICs].filter(p => 
+                p.toLowerCase().includes(val.toLowerCase())
+            );
+            renderPICOptions(filtered);
+            const drop = document.getElementById('dropPIC');
+            if (!drop.classList.contains('show')) drop.classList.add('show');
+        }
+
+        function selectOption(type, value) {
+            if (type === 'bulan') {
+                currentFilter.bulan = value;
+                document.getElementById('valBulan').innerText = value;
+            } else {
+                currentFilter.pic = value;
+                document.getElementById('inputPIC').value = value;
+            }
+            closeAllDrops();
+            updateDashboard();
+        }
+
+        function toggleDrop(id, event) {
+            if (event) event.stopPropagation();
+            const el = document.getElementById(id);
+            const isShown = el.classList.contains('show');
+            closeAllDrops();
+            if (!isShown) el.classList.add('show');
+        }
+
+        function closeAllDrops() {
+            document.querySelectorAll('.dropdown-content').forEach(d => d.classList.remove('show'));
+        }
+
+        window.onclick = function(event) {
+            if (!event.target.closest('button') && !event.target.closest('input')) closeAllDrops();
+        }
+
+        function updateDashboard() {
+            const f_b = currentFilter.bulan;
+            const f_p = currentFilter.pic;
+            
+            let fil = allData.summary.filter(i => (i.bulan === f_b) && (f_p === 'Semua PIC' || i.pic === f_p));
+            let filKonten = allData.konten.filter(k => (k.bulan === f_b) && (f_p === 'Semua PIC' || k.pic === f_p));
+            
+            const aS = fil.reduce((s, i) => s + i.sellOut, 0);
+            const aB = fil.filter(i => i.type === "BIGBET").reduce((s, i) => s + i.count, 0);
+            const aN = fil.filter(i => i.type === "NON-BIGBET").reduce((s, i) => s + i.count, 0);
+            const aP = filKonten.filter(k => k.kategori === "KONTEN PRIBADI").length;
+            const aE = filKonten.filter(k => k.kategori === "KONTEN EVENT").length;
+
+            let tS = 0, tB = 0, tN = 0, tP = 0, tE = 0;
+            if (f_p === 'Semua PIC') {
+                Object.values(allData.targets).forEach(t => {
+                    if (t && t.bulan === f_b) {
+                        tS += t.sellOut; tB += t.bigBet; tN += t.nonBigBet; tP += t.targetPribadi; tE += t.targetEvent;
+                    }
+                });
+            } else {
+                const t = allData.targets[f_p + "-" + f_b];
+                if (t) { tS = t.sellOut; tB = t.bigBet; tN = t.nonBigBet; tP = t.targetPribadi; tE = t.targetEvent; }
+            }
+
+            const getAch = (a, t) => t === 0 ? (a > 0 ? 100 : 0) : ((a / t) * 100).toFixed(1);
+            const achS = getAch(aS, tS);
+
+            document.getElementById('statTotalSales').innerText = Math.round(aS).toLocaleString('id-ID');
+            document.getElementById('statTargetSales').innerText = 'Target: ' + Math.round(tS).toLocaleString('id-ID');
+            document.getElementById('statAchSales').innerText = achS + '%';
+            document.getElementById('barSales').style.width = Math.min(achS, 100) + '%';
+            
+            document.getElementById('statBigBet').innerText = `${aB}/${tB}`;
+            document.getElementById('statAchBigBet').innerText = getAch(aB, tB) + '%';
+            document.getElementById('statNonBigBet').innerText = `${aN}/${tN}`;
+            document.getElementById('statAchNonBigBet').innerText = getAch(aN, tN) + '%';
+            document.getElementById('statPribadi').innerText = `${aP}/${tP}`;
+            document.getElementById('statAchPribadi').innerText = getAch(aP, tP) + '%';
+            document.getElementById('statEvent').innerText = `${aE}/${tE}`;
+            document.getElementById('statAchEvent').innerText = getAch(aE, tE) + '%';
+
+            const tb = document.getElementById('tableBody');
+            tb.innerHTML = fil.length ? fil.map(i => `
+                <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
+                    <td class="px-4 py-4 hidden md:table-cell">
+                        <div class="font-bold text-blue-600 leading-tight">${i.pic}</div>
+                        <div class="text-[8px] text-slate-400 font-black uppercase tracking-tighter">${i.brand}</div>
+                    </td>
+                    <td class="px-4 py-4 overflow-hidden">
+                        <div class="font-bold text-slate-700 dark:text-slate-200 text-sm leading-tight break-words">${i.namaEvent}</div>
+                        <div class="flex flex-wrap gap-1 mt-2">
+                            <span class="text-[7px] font-black px-1.5 py-0.5 rounded uppercase ${i.type === "BIGBET" ? 'text-orange-600 bg-orange-500/10' : 'text-emerald-600 bg-emerald-500/10'}">${i.type}</span>
+                            <span class="text-[7px] font-black px-1.5 py-0.5 rounded uppercase text-purple-600 bg-purple-500/10">${i.categoryDetail}</span>
+                        </div>
+                    </td>
+                    <td class="px-4 py-4 text-center hidden md:table-cell font-bold text-slate-500">${i.hari}</td>
+                    <td class="px-4 py-4 text-right font-black text-blue-600 text-sm md:text-base">${Math.round(i.sellOut).toLocaleString('id-ID')}</td>
+                </tr>`).join('') : `<tr><td colspan="4" class="py-20 text-center text-slate-400 font-bold text-xs uppercase">No Records</td></tr>`;
+            
+            document.getElementById('rowCount').innerText = fil.length + ' Data';
+        }
+
+        fetchData();
+    </script>
+</body>
+</html>
