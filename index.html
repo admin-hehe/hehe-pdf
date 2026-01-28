@@ -1,358 +1,296 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Report Promotor</title>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <script>
-        tailwind.config = { 
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: { darkBg: '#0f172a', cardDark: '#1e293b' }
-                }
-            }
-        }
-    </script>
-    <style>
-        body { font-family: 'Plus Jakarta Sans', sans-serif; -webkit-tap-highlight-color: transparent; scroll-behavior: smooth; overflow-x: hidden; }
-        .glass-header { backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); background: rgba(241, 245, 249, 0.8); }
-        .dark .glass-header { background: rgba(15, 23, 42, 0.8); }
-        .stat-card { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-        .skeleton {
-            background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%);
-            background-size: 200% 100%;
-            animation: skeleton-loading 1.5s infinite;
-        }
-        .dark .skeleton {
-            background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%);
-        }
-        @keyframes skeleton-loading { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
-        .hide-scroll::-webkit-scrollbar { display: none; }
-        .dropdown-content {
-            display: none;
-            position: absolute;
-            top: 100%;
-            left: 0;
-            right: 0;
-            margin-top: 8px;
-            z-index: 200;
-            opacity: 0;
-            box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
-        }
-        .dropdown-content.show {
-            display: block;
-            animation: slideDown 0.25s ease-out forwards;
-            transform-origin: top;
-        }
-        @keyframes slideDown {
-            from { opacity: 0; transform: translateY(-12px) scaleY(0.98); }
-            to { opacity: 1; transform: translateY(0) scaleY(1); }
-        }
-        .table-container { width: 100%; overflow: hidden; }
-        @media screen and (max-width: 768px) {
-            input, select, textarea, button { font-size: 16px !important; }
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PDF Master</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <style>
+    .glass { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
+    .btn-gradient { background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%); }
+    .custom-scrollbar::-webkit-scrollbar { width: 5px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 10px; }
+    .loader { border-top-color: #4F46E5; animation: spinner 1.5s linear infinite; }
+    @keyframes spinner { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    .mode-active { border-color: #4F46E5; background-color: #EEF2FF; color: #4338CA; }
+    .tab-active { border-bottom: 3px solid #4F46E5; color: #4F46E5; font-weight: bold; }
+    #drop-zone.dragover { background: #EEF2FF; border-color: #4F46E5; }
+  </style>
 </head>
-<body class="bg-slate-100 dark:bg-darkBg text-slate-900 dark:text-slate-200 min-h-screen pb-20">
+<body class="bg-slate-50 min-h-screen text-slate-900">
 
-    <header class="glass-header sticky top-0 z-[110] border-b border-slate-200 dark:border-slate-800 px-4 py-4 mb-4">
-        <div class="container mx-auto">
-            <div class="flex items-center justify-between mb-4">
-                <div id="logoContainer" class="flex items-center gap-2"></div>
-                <div id="lastUpdateContainer" class="text-[10px] font-black px-3 py-1.5 bg-slate-500/10 text-slate-500 rounded-full border border-slate-500/20 flex items-center gap-2 uppercase tracking-widest">
-                    <i data-lucide="clock" class="w-3 h-3"></i>
-                    <span id="txtLastUpdate">Loading...</span>
-                </div>
-            </div>
-            
-            <div class="grid grid-cols-2 gap-3">
-                <div class="relative">
-                    <label class="absolute -top-2 left-3 bg-slate-100 dark:bg-darkBg px-1 text-[9px] font-extrabold text-slate-400 uppercase z-[120] tracking-tighter">Periode</label>
-                    <button id="btnBulan" onclick="toggleDrop('dropBulan', event)" class="w-full bg-white dark:bg-cardDark border border-slate-300 dark:border-slate-700 p-3.5 rounded-2xl text-[13px] font-bold flex justify-between items-center shadow-sm active:scale-95 transition-transform">
-                        <span id="valBulan" class="truncate text-slate-700 dark:text-slate-200">Memuat...</span>
-                        <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400"></i>
-                    </button>
-                    <div id="dropBulan" class="dropdown-content bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl max-h-72 overflow-y-auto hide-scroll"></div>
-                </div>
+  <nav class="sticky top-0 z-50 bg-white border-b border-slate-200 p-4">
+    <div class="max-w-6xl mx-auto flex justify-between items-center">
+      <div class="flex items-center gap-2">
+        <div class="bg-indigo-600 p-2 rounded-lg"><i class="fas fa-file-pdf text-white"></i></div>
+        <h1 class="text-xl font-black tracking-tighter">PDF<span class="text-indigo-600">PRO</span></h1>
+      </div>
+      <div id="status-badge" class="px-3 py-1 rounded-full bg-slate-100 text-[10px] font-bold text-slate-500 uppercase">System Ready</div>
+    </div>
+  </nav>
 
-                <div class="relative">
-                    <label class="absolute -top-2 left-3 bg-slate-100 dark:bg-darkBg px-1 text-[9px] font-extrabold text-slate-400 uppercase z-[120] tracking-tighter">PIC</label>
-                    <div class="relative group">
-                        <input 
-                            type="text" 
-                            id="inputPIC" 
-                            placeholder="Cari PIC..."
-                            onfocus="this.select(); toggleDrop('dropPIC', event)"
-                            oninput="filterPIC(this.value)"
-                            class="w-full bg-white dark:bg-cardDark border border-slate-300 dark:border-slate-700 p-3.5 pl-10 rounded-2xl text-[13px] font-bold shadow-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                        >
-                        <i data-lucide="search" class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"></i>
-                        <i data-lucide="chevron-down" class="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none"></i>
-                    </div>
-                    <div id="dropPIC" class="dropdown-content bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl max-h-60 overflow-y-auto hide-scroll"></div>
-                </div>
+  <main class="max-w-6xl mx-auto p-4 md:p-8">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+      
+      <div class="lg:col-span-7 space-y-4">
+        <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
+          <div class="flex border-b border-slate-100">
+            <button onclick="switchSourceTab('sheet')" id="tab-sheet" class="flex-1 py-4 text-sm tab-active">
+              <i class="fas fa-database mr-2"></i>Database Sheet
+            </button>
+            <button onclick="switchSourceTab('local')" id="tab-local" class="flex-1 py-4 text-sm text-slate-400 hover:text-slate-600">
+              <i class="fas fa-upload mr-2"></i>Upload Lokal
+            </button>
+          </div>
+
+          <div id="content-sheet" class="block">
+            <div class="p-4 bg-slate-50/50 flex gap-2 border-b border-slate-100">
+              <input type="text" id="searchData" onkeyup="filterList()" placeholder="Cari rincian..." class="flex-1 p-2.5 bg-white rounded-xl text-sm border border-slate-200 outline-none focus:ring-2 focus:ring-indigo-500/20">
+              <button onclick="loadSheetData()" class="px-4 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition"><i class="fas fa-sync-alt text-indigo-500"></i></button>
             </div>
+            <div id="history-list" class="h-[400px] overflow-y-auto custom-scrollbar p-3 space-y-2">
+               <p class="py-20 text-center text-slate-400 text-sm italic">Klik tombol refresh di atas untuk load data sheet.</p>
+            </div>
+          </div>
+
+          <div id="content-local" class="hidden p-8">
+            <div id="drop-zone" class="border-2 border-dashed border-slate-200 rounded-3xl p-12 text-center transition cursor-pointer hover:bg-slate-50 group">
+              <input type="file" id="fileInput" class="hidden" multiple onchange="handleLocalFiles(this.files)">
+              <div onclick="document.getElementById('fileInput').click()">
+                <i class="fas fa-cloud-upload-alt text-4xl text-slate-300 group-hover:text-indigo-500 mb-4 transition"></i>
+                <p class="font-bold text-slate-700">Drag & Drop file di sini</p>
+                <p class="text-xs text-slate-400 mt-2 italic">Atau klik untuk pilih dari komputer</p>
+              </div>
+            </div>
+          </div>
         </div>
-    </header>
+      </div>
 
-    <main class="container mx-auto px-4 space-y-4">
-        <div id="skeletonView" class="space-y-4">
-            <div class="h-32 skeleton rounded-[2rem]"></div>
-            <div class="grid grid-cols-2 gap-4">
-                <div class="h-28 skeleton rounded-[2rem]"></div>
-                <div class="h-28 skeleton rounded-[2rem]"></div>
+      <div class="lg:col-span-5 space-y-6">
+        <div class="bg-white p-8 rounded-3xl shadow-xl border border-slate-100 sticky top-24">
+          <h3 class="text-lg font-bold mb-6 flex items-center"><i class="fas fa-bolt mr-2 text-yellow-500"></i> PDF Master Tools</h3>
+
+          <div class="grid grid-cols-3 gap-2 mb-6 text-center">
+            <button onclick="setMode('merge')" id="btn-merge" class="mode-btn p-3 rounded-2xl border-2 transition mode-active">
+              <i class="fas fa-layer-group block mb-1"></i><span class="text-[9px] font-bold uppercase tracking-wider">Merge</span>
+            </button>
+            <button onclick="setMode('imgToPdf')" id="btn-imgToPdf" class="mode-btn p-3 rounded-2xl border-2 border-transparent bg-slate-50 text-slate-500 transition">
+              <i class="fas fa-images block mb-1"></i><span class="text-[9px] font-bold uppercase tracking-wider">Img2Pdf</span>
+            </button>
+            <button onclick="setMode('split')" id="btn-split" class="mode-btn p-3 rounded-2xl border-2 border-transparent bg-slate-50 text-slate-500 transition">
+              <i class="fas fa-cut block mb-1"></i><span class="text-[9px] font-bold uppercase tracking-wider">Split</span>
+            </button>
+          </div>
+
+          <div id="split-settings" class="hidden mb-6 p-4 bg-indigo-50 rounded-2xl border border-indigo-100">
+            <label class="text-[10px] font-bold text-indigo-600 uppercase mb-1 block">Rentang Halaman</label>
+            <input type="text" id="splitPages" placeholder="Misal: 1, 3, 5-10" class="w-full p-2.5 rounded-xl border border-indigo-200 text-sm outline-none focus:ring-2 focus:ring-indigo-500/20">
+          </div>
+
+          <div class="bg-slate-50 rounded-2xl p-5 mb-6">
+            <div class="flex justify-between items-center mb-3">
+              <span class="text-xs font-bold text-slate-500 uppercase tracking-tighter">File Antrian (<span id="file-count">0</span>)</span>
+              <button onclick="clearQueue()" class="text-[10px] text-red-500 font-bold hover:underline">RESET</button>
             </div>
-        </div>
-
-        <div id="realView" class="hidden space-y-4 animate__animated animate__fadeIn">
-            <section class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div class="stat-card bg-gradient-to-br from-blue-600 to-indigo-700 p-6 rounded-[2.2rem] shadow-xl shadow-blue-500/20 text-white relative overflow-hidden flex flex-col justify-center min-h-[140px]">
-                    <i data-lucide="medal" class="absolute -right-6 -bottom-6 w-32 h-32 opacity-10 rotate-12"></i>
-                    <div class="relative z-10 flex justify-between items-end">
-                        <div>
-                            <p class="text-[10px] font-bold opacity-80 uppercase tracking-widest mb-1">Total Achievement</p>
-                            <p id="statAchSales" class="text-4xl font-black tracking-tighter leading-none">0%</p>
-                        </div>
-                        <div class="text-right">
-                            <p class="text-[10px] font-bold opacity-80 uppercase mb-1">Actual Sell Out</p>
-                            <p id="statTotalSales" class="text-xl font-black">0</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="stat-card bg-white dark:bg-cardDark p-6 rounded-[2.2rem] shadow-sm border border-slate-200 dark:border-slate-800 flex flex-col justify-center min-h-[140px]">
-                    <div class="flex justify-between items-center mb-4">
-                        <div class="flex items-center gap-2">
-                             <div class="p-1.5 bg-slate-500/10 rounded-lg"><i data-lucide="target" class="w-4 h-4 text-slate-400"></i></div>
-                             <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Target Progress</span>
-                        </div>
-                        <span id="statTargetSales" class="text-xs font-bold text-slate-400">0</span>
-                    </div>
-                    <div class="h-4 w-full bg-slate-100 dark:bg-slate-700/50 rounded-full overflow-hidden">
-                        <div id="barSales" class="h-full bg-blue-600 rounded-full transition-all duration-1000" style="width: 0%"></div>
-                    </div>
-                </div>
-            </section>
-
-            <div class="grid grid-cols-2 gap-4">
-                <div class="bg-white dark:bg-cardDark p-5 rounded-[2rem] border-b-[6px] border-orange-500 shadow-sm">
-                    <p class="text-[9px] font-black text-orange-500 uppercase mb-1">Bigbet</p>
-                    <p id="statBigBet" class="text-lg font-black text-slate-700 dark:text-slate-200 leading-tight">0/0</p>
-                    <p id="statAchBigBet" class="text-2xl font-black text-orange-500">0%</p>
-                </div>
-                <div class="bg-white dark:bg-cardDark p-5 rounded-[2rem] border-b-[6px] border-emerald-500 shadow-sm">
-                    <p class="text-[9px] font-black text-emerald-500 uppercase mb-1">Non-Bigbet</p>
-                    <p id="statNonBigBet" class="text-lg font-black text-slate-700 dark:text-slate-200 leading-tight">0/0</p>
-                    <p id="statAchNonBigBet" class="text-2xl font-black text-emerald-500">0%</p>
-                </div>
-                <div class="bg-white dark:bg-cardDark p-5 rounded-[2rem] border-b-[6px] border-indigo-500 shadow-sm">
-                    <p class="text-[9px] font-black text-indigo-500 uppercase mb-1">Pribadi</p>
-                    <p id="statPribadi" class="text-lg font-black text-slate-700 dark:text-slate-200 leading-tight">0/0</p>
-                    <p id="statAchPribadi" class="text-2xl font-black text-indigo-500">0%</p>
-                </div>
-                <div class="bg-white dark:bg-cardDark p-5 rounded-[2rem] border-b-[6px] border-purple-500 shadow-sm">
-                    <p class="text-[9px] font-black text-purple-500 uppercase mb-1">Event</p>
-                    <p id="statEvent" class="text-lg font-black text-slate-700 dark:text-slate-200 leading-tight">0/0</p>
-                    <p id="statAchEvent" class="text-2xl font-black text-purple-500">0%</p>
-                </div>
+            <div id="selected-preview" class="text-[11px] text-slate-500 space-y-1 max-h-40 overflow-y-auto custom-scrollbar italic">
+              Kosong...
             </div>
+          </div>
 
-            <section class="bg-white dark:bg-cardDark rounded-[2.5rem] overflow-hidden shadow-sm border border-slate-200 dark:border-slate-800">
-                <div class="p-5 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
-                    <h3 class="font-black text-[10px] uppercase tracking-widest text-slate-400">Breakdown Records</h3>
-                    <span id="rowCount" class="text-[10px] font-bold bg-slate-50 dark:bg-slate-800 px-3 py-1.5 rounded-full text-slate-500">0 Data</span>
-                </div>
-                <div class="table-container">
-                    <table class="w-full text-left table-fixed">
-                        <thead class="bg-slate-50/50 dark:bg-slate-900 text-slate-400 uppercase text-[9px] font-black">
-                            <tr>
-                                <th class="px-4 py-4 hidden md:table-cell md:w-1/4">Promotor</th> 
-                                <th class="px-4 py-4 w-2/3 md:w-1/3">Event</th>
-                                <th class="px-4 py-4 text-center hidden md:table-cell md:w-1/6">Days</th>
-                                <th class="px-4 py-4 text-right w-1/3 md:w-1/4">Sell Out</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tableBody" class="divide-y divide-slate-100 dark:divide-slate-800/50 text-xs"></tbody>
-                    </table>
-                </div>
-            </section>
+          <button onclick="processFiles()" class="w-full btn-gradient text-white py-4 rounded-2xl font-black shadow-lg hover:brightness-110 active:scale-95 transition">
+            PROSES PDF SEKARANG
+          </button>
         </div>
-    </main>
+      </div>
+    </div>
+  </main>
 
-    <script>
-        // GANTI URL INI SETIAP KALI NEW DEPLOYMENT (Pilih "Anyone")
-        const API_URL = 'https://script.google.com/macros/s/AKfycbwdeHToNBKtvAzCkI6G-E3rzGrIgYTKnRwv6xwJK5Cfn7gXCRTKm4X7BZGn2CBhVNw/exec'; 
-        const LOGO_URL = 'https://upload.wikimedia.org/wikipedia/id/4/4c/Paragoncorp-logo.png';
+  <div id="loader-overlay" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] hidden flex items-center justify-center">
+    <div class="bg-white p-10 rounded-[2.5rem] text-center shadow-2xl scale-110">
+      <div class="loader rounded-full border-4 border-t-4 border-slate-100 h-14 w-14 mb-5 mx-auto"></div>
+      <p id="loader-text" class="text-sm font-black text-slate-800 tracking-tighter uppercase">Sedang Memproses...</p>
+    </div>
+  </div>
 
-        let allData = { summary: [], targets: {}, konten: [], lastUpdate: '' };
-        let currentFilter = { bulan: '', pic: 'Semua PIC' };
-        let uniquePICs = [];
+  <script>
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbw1C3OCnNhUBiBeMkMcyz_wxPu2LFpXq1FQkp6iNpgDwOZSf7glzSGMhf96QOpHAWJP/exec"; // GANTI BRO!
+    const { PDFDocument } = PDFLib;
+    let currentMode = 'merge';
+    let selectedFiles = [];
 
-        function initLogo() {
-            const container = document.getElementById('logoContainer');
-            container.innerHTML = LOGO_URL ? `<img src="${LOGO_URL}" class="h-8 w-auto">` : `
-                <div class="bg-blue-600 p-2 rounded-xl shadow-lg shadow-blue-500/30"><i data-lucide="layers" class="text-white w-5 h-5"></i></div>
-                <h1 class="text-xl font-extrabold tracking-tighter uppercase font-black">REPORT<span class="text-blue-600">PRO</span></h1>
-            `;
-            lucide.createIcons();
+    // --- TAB & MODE NAVIGATION ---
+    function switchSourceTab(target) {
+      document.getElementById('content-sheet').classList.toggle('hidden', target !== 'sheet');
+      document.getElementById('content-local').classList.toggle('hidden', target !== 'local');
+      document.getElementById('tab-sheet').className = target === 'sheet' ? 'flex-1 py-4 text-sm tab-active' : 'flex-1 py-4 text-sm text-slate-400 hover:text-slate-600';
+      document.getElementById('tab-local').className = target === 'local' ? 'flex-1 py-4 text-sm tab-active' : 'flex-1 py-4 text-sm text-slate-400 hover:text-slate-600';
+    }
+
+    function setMode(mode) {
+      currentMode = mode;
+      document.querySelectorAll('.mode-btn').forEach(b => b.className = 'mode-btn p-3 rounded-2xl border-2 border-transparent bg-slate-50 text-slate-500 transition');
+      document.getElementById('btn-' + mode).className = 'mode-btn p-3 rounded-2xl border-2 transition mode-active';
+      document.getElementById('split-settings').classList.toggle('hidden', mode !== 'split');
+    }
+
+    // --- DATA HANDLING (DRAG & DROP) ---
+    const dropZone = document.getElementById('drop-zone');
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(e => dropZone.addEventListener(e, (ev) => ev.preventDefault()));
+    dropZone.addEventListener('dragover', () => dropZone.classList.add('dragover'));
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+    dropZone.addEventListener('drop', (e) => {
+      dropZone.classList.remove('dragover');
+      handleLocalFiles(e.dataTransfer.files);
+    });
+
+    async function loadSheetData() {
+      toggleLoader(true, "Sinkronisasi Sheet...");
+      try {
+        const res = await fetch(`${GAS_URL}?action=getHistory`);
+        const data = await res.json();
+        const container = document.getElementById('history-list');
+        container.innerHTML = data.map(item => {
+          if(!item.fileUrl) return '';
+          return `<label class="flex items-center p-3.5 bg-slate-50 rounded-2xl border border-transparent hover:border-indigo-200 transition cursor-pointer mb-2">
+                    <input type="checkbox" class="w-5 h-5 rounded-md mr-4 text-indigo-600 focus:ring-0" onchange="toggleSheetFile('${item.fileUrl}', '${item.rincian}', this.checked)">
+                    <div class="text-left"><p class="text-xs font-black text-slate-700 uppercase tracking-tight">${item.rincian || 'No Title'}</p><p class="text-[9px] text-slate-400 font-bold uppercase">${item.user || 'Unknown'}</p></div>
+                  </label>`;
+        }).join('');
+        updateStatus("Sync Ready");
+      } catch (e) { console.error(e); }
+      toggleLoader(false);
+    }
+
+    function handleLocalFiles(files) {
+      Array.from(files).forEach(f => selectedFiles.push(f));
+      updatePreview();
+    }
+
+    async function toggleSheetFile(url, name, isChecked) {
+      if(isChecked) {
+        toggleLoader(true, "Downloading File...");
+        try {
+          const res = await fetch(`${GAS_URL}?action=getFileData&id=${encodeURIComponent(url)}`);
+          const fileData = await res.json();
+          if(!fileData.success) throw new Error(fileData.error);
+          const blob = base64ToBlob(fileData.data, fileData.mimeType);
+          selectedFiles.push(new File([blob], fileData.name || name, {type: fileData.mimeType}));
+        } catch(e) { alert("Drive Gagal: " + e.message); }
+        toggleLoader(false);
+      } else {
+        selectedFiles = selectedFiles.filter(f => f.name !== name);
+      }
+      updatePreview();
+    }
+
+    function updatePreview() {
+      document.getElementById('file-count').innerText = selectedFiles.length;
+      document.getElementById('selected-preview').innerHTML = selectedFiles.length > 0 ? selectedFiles.map(f => `• ${f.name}`).join('<br>') : "Kosong...";
+    }
+
+    function clearQueue() { selectedFiles = []; updatePreview(); }
+
+async function processFiles() {
+  if(selectedFiles.length === 0) return alert("Antrian kosong bro!");
+  toggleLoader(true, "Sistem Sedang Kerja...");
+  
+  try {
+    if(currentMode === 'merge') await doMerge();
+    else if(currentMode === 'imgToPdf') await doImgToPdf();
+    else if(currentMode === 'split') await doSplit();
+    
+    // --- TAMBAHAN BIAR AUTO CLEAR ---
+    clearQueue(); // Bersihin array selectedFiles & UI preview
+    
+    // Uncheck semua checkbox di list sheet biar gak dobel pas proses berikutnya
+    document.querySelectorAll('.file-checkbox').forEach(cb => cb.checked = false);
+    
+    updateStatus("Proses Selesai & Reset");
+  } catch(e) { 
+    alert("Error Sistem: " + e.message); 
+  } finally {
+    toggleLoader(false);
+  }
+}
+
+    async function doMerge() {
+      const mergedPdf = await PDFDocument.create();
+      for (const file of selectedFiles) {
+        if(file.type !== 'application/pdf') continue;
+        const pdf = await PDFDocument.load(await file.arrayBuffer());
+        const pages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
+        pages.forEach(p => mergedPdf.addPage(p));
+      }
+      download(await mergedPdf.save(), "Merged_Master.pdf");
+    }
+
+    async function doImgToPdf() {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF('p', 'mm', 'a4');
+      const wA4 = doc.internal.pageSize.getWidth();
+      const hA4 = doc.internal.pageSize.getHeight();
+
+      for (let i = 0; i < selectedFiles.length; i++) {
+        if(!selectedFiles[i].type.startsWith('image/')) continue;
+        const dataUrl = await readFile(selectedFiles[i]);
+        if(i > 0) doc.addPage();
+        const p = doc.getImageProperties(dataUrl);
+        const ratio = Math.min(wA4 / p.width, hA4 / p.height);
+        const w = p.width * ratio;
+        const h = p.height * ratio;
+        doc.addImage(dataUrl, 'JPEG', (wA4 - w) / 2, (hA4 - h) / 2, w, h);
+      }
+      doc.save("Images_Converted.pdf");
+    }
+
+    async function doSplit() {
+      if(selectedFiles.length !== 1) return alert("Split cuma bisa 1 file PDF aja bro!");
+      const rangeTxt = document.getElementById('splitPages').value;
+      if(!rangeTxt) return alert("Masukkan rentang halaman!");
+
+      const pdf = await PDFDocument.load(await selectedFiles[0].arrayBuffer());
+      const newPdf = await PDFDocument.create();
+      const totalPages = pdf.getPageCount();
+
+      // Parsing Range (1, 3, 5-7)
+      const indices = [];
+      rangeTxt.split(',').forEach(part => {
+        if(part.includes('-')) {
+          const [s, e] = part.split('-').map(Number);
+          for(let i=s; i<=e; i++) if(i<=totalPages) indices.push(i-1);
+        } else {
+          const p = Number(part.trim());
+          if(p<=totalPages) indices.push(p-1);
         }
+      });
 
-        async function fetchData() {
-            try {
-                const res = await fetch(API_URL);
-                if (!res.ok) throw new Error('Network response was not ok');
-                allData = await res.json();
+      if(indices.length === 0) throw new Error("Halaman tidak ditemukan!");
+      const pages = await newPdf.copyPages(pdf, indices);
+      pages.forEach(p => newPdf.addPage(p));
+      download(await newPdf.save(), "Split_Result.pdf");
+    }
 
-                // Update Last Update Text
-                if (allData.lastUpdate) {
-                    document.getElementById('txtLastUpdate').innerText = 'Update: ' + allData.lastUpdate;
-                }
-
-                initLogo();
-                setupInitialFilters();
-                updateDashboard();
-
-                document.getElementById('skeletonView').classList.add('hidden');
-                document.getElementById('realView').classList.remove('hidden');
-                lucide.createIcons(); // Re-render icons
-
-            } catch(e) { 
-                console.error("Gagal fetch:", e); 
-                document.getElementById('txtLastUpdate').innerText = "Gagal Memuat Data";
-            }
-        }
-
-        function setupInitialFilters() {
-            const db = document.getElementById('dropBulan');
-            const uniqueMonths = [...new Set(allData.summary.map(i => i.bulan))];
-            uniquePICs = [...new Set(allData.summary.map(i => i.pic))].sort();
-            
-            const curMonth = new Intl.DateTimeFormat('id-ID', {month: 'long'}).format(new Date());
-            currentFilter.bulan = uniqueMonths.includes(curMonth) ? curMonth : (uniqueMonths.length > 0 ? uniqueMonths[0] : '');
-            document.getElementById('valBulan').innerText = currentFilter.bulan || 'Pilih Bulan';
-
-            db.innerHTML = uniqueMonths.map(m => `
-                <div onclick="selectOption('bulan', '${m}')" class="px-5 py-4 text-sm font-bold hover:bg-blue-50 dark:hover:bg-blue-900/20 cursor-pointer border-b dark:border-slate-700/50 last:border-0 text-slate-600 dark:text-slate-300">${m}</div>
-            `).join('');
-
-            renderPICOptions(['Semua PIC', ...uniquePICs]);
-            document.getElementById('inputPIC').value = 'Semua PIC';
-        }
-
-        function renderPICOptions(list) {
-            const dp = document.getElementById('dropPIC');
-            dp.innerHTML = list.map(p => `
-                <div onclick="selectOption('pic', '${p}')" class="px-5 py-4 text-sm font-bold hover:bg-blue-50 dark:hover:bg-blue-900/20 cursor-pointer border-b dark:border-slate-700/50 last:border-0 text-slate-600 dark:text-slate-300">${p}</div>
-            `).join('');
-        }
-
-        function filterPIC(val) {
-            const filtered = ['Semua PIC', ...uniquePICs].filter(p => 
-                p.toLowerCase().includes(val.toLowerCase())
-            );
-            renderPICOptions(filtered);
-            const drop = document.getElementById('dropPIC');
-            if (!drop.classList.contains('show')) drop.classList.add('show');
-        }
-
-        function selectOption(type, value) {
-            if (type === 'bulan') {
-                currentFilter.bulan = value;
-                document.getElementById('valBulan').innerText = value;
-            } else {
-                currentFilter.pic = value;
-                document.getElementById('inputPIC').value = value;
-            }
-            closeAllDrops();
-            updateDashboard();
-        }
-
-        function toggleDrop(id, event) {
-            if (event) event.stopPropagation();
-            const el = document.getElementById(id);
-            const isShown = el.classList.contains('show');
-            closeAllDrops();
-            if (!isShown) el.classList.add('show');
-        }
-
-        function closeAllDrops() {
-            document.querySelectorAll('.dropdown-content').forEach(d => d.classList.remove('show'));
-        }
-
-        window.onclick = function(event) {
-            if (!event.target.closest('button') && !event.target.closest('input')) closeAllDrops();
-        }
-
-        function updateDashboard() {
-            const f_b = currentFilter.bulan;
-            const f_p = currentFilter.pic;
-            
-            let fil = allData.summary.filter(i => (i.bulan === f_b) && (f_p === 'Semua PIC' || i.pic === f_p));
-            let filKonten = allData.konten.filter(k => (k.bulan === f_b) && (f_p === 'Semua PIC' || k.pic === f_p));
-            
-            const aS = fil.reduce((s, i) => s + i.sellOut, 0);
-            const aB = fil.filter(i => i.type === "BIGBET").reduce((s, i) => s + i.count, 0);
-            const aN = fil.filter(i => i.type === "NON-BIGBET").reduce((s, i) => s + i.count, 0);
-            const aP = filKonten.filter(k => k.kategori === "KONTEN PRIBADI").length;
-            const aE = filKonten.filter(k => k.kategori === "KONTEN EVENT").length;
-
-            let tS = 0, tB = 0, tN = 0, tP = 0, tE = 0;
-            if (f_p === 'Semua PIC') {
-                Object.values(allData.targets).forEach(t => {
-                    if (t && t.bulan === f_b) {
-                        tS += t.sellOut; tB += t.bigBet; tN += t.nonBigBet; tP += t.targetPribadi; tE += t.targetEvent;
-                    }
-                });
-            } else {
-                const t = allData.targets[f_p + "-" + f_b];
-                if (t) { tS = t.sellOut; tB = t.bigBet; tN = t.nonBigBet; tP = t.targetPribadi; tE = t.targetEvent; }
-            }
-
-            const getAch = (a, t) => t === 0 ? (a > 0 ? 100 : 0) : ((a / t) * 100).toFixed(1);
-            const achS = getAch(aS, tS);
-
-            document.getElementById('statTotalSales').innerText = Math.round(aS).toLocaleString('id-ID');
-            document.getElementById('statTargetSales').innerText = 'Target: ' + Math.round(tS).toLocaleString('id-ID');
-            document.getElementById('statAchSales').innerText = achS + '%';
-            document.getElementById('barSales').style.width = Math.min(achS, 100) + '%';
-            
-            document.getElementById('statBigBet').innerText = `${aB}/${tB}`;
-            document.getElementById('statAchBigBet').innerText = getAch(aB, tB) + '%';
-            document.getElementById('statNonBigBet').innerText = `${aN}/${tN}`;
-            document.getElementById('statAchNonBigBet').innerText = getAch(aN, tN) + '%';
-            document.getElementById('statPribadi').innerText = `${aP}/${tP}`;
-            document.getElementById('statAchPribadi').innerText = getAch(aP, tP) + '%';
-            document.getElementById('statEvent').innerText = `${aE}/${tE}`;
-            document.getElementById('statAchEvent').innerText = getAch(aE, tE) + '%';
-
-            const tb = document.getElementById('tableBody');
-            tb.innerHTML = fil.length ? fil.map(i => `
-                <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
-                    <td class="px-4 py-4 hidden md:table-cell">
-                        <div class="font-bold text-blue-600 leading-tight">${i.pic}</div>
-                        <div class="text-[8px] text-slate-400 font-black uppercase tracking-tighter">${i.brand}</div>
-                    </td>
-                    <td class="px-4 py-4 overflow-hidden">
-                        <div class="font-bold text-slate-700 dark:text-slate-200 text-sm leading-tight break-words">${i.namaEvent}</div>
-                        <div class="flex flex-wrap gap-1 mt-2">
-                            <span class="text-[7px] font-black px-1.5 py-0.5 rounded uppercase ${i.type === "BIGBET" ? 'text-orange-600 bg-orange-500/10' : 'text-emerald-600 bg-emerald-500/10'}">${i.type}</span>
-                            <span class="text-[7px] font-black px-1.5 py-0.5 rounded uppercase text-purple-600 bg-purple-500/10">${i.categoryDetail}</span>
-                        </div>
-                    </td>
-                    <td class="px-4 py-4 text-center hidden md:table-cell font-bold text-slate-500">${i.hari}</td>
-                    <td class="px-4 py-4 text-right font-black text-blue-600 text-sm md:text-base">${Math.round(i.sellOut).toLocaleString('id-ID')}</td>
-                </tr>`).join('') : `<tr><td colspan="4" class="py-20 text-center text-slate-400 font-bold text-xs uppercase">No Records</td></tr>`;
-            
-            document.getElementById('rowCount').innerText = fil.length + ' Data';
-        }
-
-        fetchData();
-    </script>
+    // --- HELPERS ---
+    function base64ToBlob(b, t) {
+      const s = atob(b); const a = new Uint8Array(s.length);
+      for (let i=0; i<s.length; i++) a[i] = s.charCodeAt(i);
+      return new Blob([a], { type: t });
+    }
+    function readFile(f) { return new Promise(res => { const r = new FileReader(); r.onload = e => res(e.target.result); r.readAsDataURL(f); }); }
+    function download(d, n) { 
+      const b = new Blob([d], { type: "application/pdf" });
+      const u = URL.createObjectURL(b);
+      const a = document.createElement("a"); a.href = u; a.download = n; a.click();
+    }
+    function toggleLoader(s, t) { document.getElementById('loader-overlay').classList.toggle('hidden', !s); document.getElementById('loader-text').innerText = t; }
+    function updateStatus(m) { const s = document.getElementById('status-badge'); s.innerText = m; s.className = 'px-3 py-1 rounded-full bg-green-100 text-[10px] font-bold text-green-600 uppercase'; }
+    function filterList() {
+      const q = document.getElementById('searchData').value.toLowerCase();
+      document.querySelectorAll('#history-list label').forEach(l => l.style.display = l.innerText.toLowerCase().includes(q) ? 'flex' : 'none');
+    }
+  </script>
 </body>
 </html>
