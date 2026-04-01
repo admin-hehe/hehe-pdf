@@ -8,6 +8,7 @@
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
   <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 
   <style>
@@ -160,11 +161,39 @@
     async function handleLocalFiles(files) {
       toggleLoader(true, "MEMBEDAH FILE...");
       for (const file of files) {
-        const buffer = await file.arrayBuffer();
-        if (file.type === 'application/pdf') {
-          await explodePdf(buffer, file.name);
-        } else if (file.type.startsWith('image/')) {
-          pageList.push({ buffer: buffer, sourceName: file.name, type: 'image', mime: file.type });
+        let currentFile = file;
+        let currentBuffer;
+        let currentMime = file.type;
+        const isHeic = file.name.toLowerCase().endsWith('.heic') || file.name.toLowerCase().endsWith('.heif');
+        
+        try {
+          if (isHeic) {
+            toggleLoader(true, "CONVERTING HEIC...");
+            const convertedBlob = await heic2any({
+              blob: file,
+              toType: "image/jpeg",
+              quality: 0.7
+            });
+            const finalBlob = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob;
+            currentBuffer = await finalBlob.arrayBuffer();
+            currentMime = "image/jpeg";
+          } else {
+            currentBuffer = await file.arrayBuffer();
+          }
+
+          if (currentMime === 'application/pdf') {
+            await explodePdf(currentBuffer, file.name);
+          } else if (currentMime.startsWith('image/') || isHeic) {
+            pageList.push({ 
+              buffer: currentBuffer, 
+              sourceName: file.name, 
+              type: 'image', 
+              mime: currentMime 
+            });
+          }
+        } catch (err) {
+          console.error("Gagal proses file:", file.name, err);
+          alert("Gagal proses " + file.name + ". Pastikan formatnya bener, Bro.");
         }
       }
       renderAllPages();
